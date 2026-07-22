@@ -1,0 +1,3576 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Peta Satelit Cipurwasari — Karawang</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+      /* =====================================================================
+   Peta Informasi Geografis Cipurwasari
+   Arah desain: alat survei lapangan — peta jadi kanvas, antarmuka
+   mengambang di atasnya dengan warna gelap agar tidak melawan citra.
+   ===================================================================== */
+
+      :root {
+        /* Warna */
+        --tinta: #000000; /* hijau-hitam: panel mengambang & teks utama */
+        --kanopi: #10381f; /* hijau tua: header */
+        --daun: #1fa856; /* hijau aksi utama */
+        --daun-tua: #17803f;
+        --padi: #f5c518; /* aksen sorot */
+        --bata: #dc2626; /* aksi merusak */
+        --kabut: #eef2ef; /* latar halaman */
+        --kertas: #ffffff;
+        --garis: #dde5e0;
+        --batu: #6b7d72; /* teks sekunder */
+        --batu-muda: #9aa8a0;
+
+        /* Huruf */
+        --f-display: "Bricolage Grotesque", "Segoe UI", sans-serif;
+        --f-teks: "Public Sans", "Segoe UI", sans-serif;
+        --f-data: "JetBrains Mono", ui-monospace, monospace;
+
+        /* Bentuk */
+        --r-kecil: 8px;
+        --r-sedang: 12px;
+        --r-besar: 18px;
+        --bayang-ambang: 0 8px 30px rgba(6, 20, 12, 0.35);
+        --bayang-kartu: 0 2px 10px rgba(13, 25, 18, 0.06);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      /* Panel mengambang memakai display:flex, yang mengalahkan atribut
+   [hidden] bawaan peramban. Kembalikan prioritasnya. */
+      [hidden] {
+        display: none !important;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--f-teks);
+        color: var(--tinta);
+        background: var(--kabut);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        padding-top: 72px;
+      }
+
+      button {
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      :focus-visible {
+        outline: 2.5px solid var(--padi);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      /* =========================
+   NAVBAR
+========================= */
+
+      nav.navbar-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: #10381f;
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid rgba(242, 236, 221, 0.18);
+        padding: 16px 0;
+      }
+
+      .navbar-custom .container {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        position: relative;
+      }
+
+      .navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: "Fraunces", serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #fff;
+        text-decoration: none;
+      }
+
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+      }
+
+      .navbar-nav {
+        display: flex;
+        gap: 28px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .navbar-nav .nav-link {
+        color: #fff;
+        font-size: 0.9rem;
+        font-weight: 500;
+        opacity: 0.85;
+        text-decoration: none;
+        transition: 0.2s;
+      }
+
+      .navbar-nav .nav-link:hover {
+        color: #fff;
+        opacity: 1;
+      }
+
+      .nav-toggle {
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+      }
+
+      .nav-toggle span {
+        width: 24px;
+        height: 2px;
+        background: #fff;
+        border-radius: 10px;
+      }
+
+      /* =========================
+   MOBILE
+========================= */
+
+      @media (max-width: 820px) {
+        .nav-toggle {
+          display: flex;
+          z-index: 10001;
+        }
+
+        .navbar-nav {
+          position: absolute;
+
+          top: calc(100% + 16px);
+
+          left: 0;
+
+          right: 0;
+
+          background: rgba(31, 59, 44, 0.98);
+
+          backdrop-filter: blur(8px);
+
+          display: flex;
+
+          flex-direction: column;
+
+          gap: 0;
+
+          max-height: 0;
+
+          overflow: hidden;
+
+          transition: max-height 0.35s ease;
+
+          border-radius: 0 0 14px 14px;
+
+          box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+
+          z-index: 10000;
+        }
+
+        .navbar-nav.open {
+          max-height: 350px;
+        }
+
+        .navbar-nav .nav-link {
+          display: block;
+
+          padding: 16px 24px;
+
+          color: #fff;
+
+          border-top: 1px solid rgba(255, 255, 255, 0.12);
+        }
+      }
+
+      /* =====================================================================
+   Header
+   ===================================================================== */
+
+      .topbar {
+        background: var(--kanopi);
+        color: #ffffff;
+        padding: 14px 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: rgba(255, 255, 255, 0.85);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        padding: 8px 14px;
+        border-radius: 999px;
+        transition:
+          background 0.15s,
+          color 0.15s;
+        flex-shrink: 0;
+      }
+
+      .back:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+      }
+
+      .back i {
+        font-size: 11px;
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+      }
+
+      .brand-eyebrow {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--padi);
+      }
+
+      .brand h1 {
+        font-family: var(--f-display);
+        font-size: 23px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0;
+        line-height: 1.1;
+        white-space: nowrap;
+      }
+
+      .topbar-meta {
+        margin: 0 0 0 auto;
+        font-size: 12px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.65);
+        display: flex;
+        gap: 8px;
+        white-space: nowrap;
+      }
+
+      .topbar-meta span {
+        color: rgba(255, 255, 255, 0.3);
+      }
+
+      /* =====================================================================
+   Ruang kerja: peta + panel
+   ===================================================================== */
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 1fr 288px;
+        gap: 16px;
+        padding: 16px;
+        height: calc(100vh - 66px);
+      }
+
+      .stage {
+        position: relative;
+        border-radius: var(--r-besar);
+        overflow: hidden;
+        box-shadow: var(--bayang-kartu);
+        background: #cfd8d2;
+      }
+
+      #map {
+        position: absolute;
+        inset: 0;
+        background: #cfd8d2;
+      }
+
+      /* Kursor bidik menegaskan peta sedang siap ditandai */
+      #map.is-menandai,
+      #map.is-menandai .leaflet-grab,
+      #map.is-menandai .leaflet-interactive {
+        cursor: crosshair;
+      }
+
+      #map.is-menghapus,
+      #map.is-menghapus .leaflet-grab {
+        cursor: default;
+      }
+
+      #map.is-menghapus .leaflet-marker-icon,
+      #map.is-menghapus .leaflet-interactive {
+        cursor: pointer;
+      }
+
+      /* Kontrol bawaan Leaflet diselaraskan dengan bahasa desain di sini */
+      .leaflet-control-layers,
+      .leaflet-control-zoom {
+        border: none !important;
+        border-radius: var(--r-sedang) !important;
+        box-shadow: var(--bayang-ambang) !important;
+        overflow: hidden;
+      }
+
+      .leaflet-control-zoom a {
+        background: rgba(13, 25, 18, 0.92) !important;
+        color: #ffffff !important;
+        border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+        font-weight: 400;
+      }
+
+      .leaflet-control-zoom a:hover {
+        background: rgba(31, 168, 86, 0.95) !important;
+      }
+
+      .leaflet-control-layers-toggle {
+        background-color: rgba(13, 25, 18, 0.92) !important;
+        filter: invert(1) hue-rotate(180deg);
+      }
+
+      .leaflet-control-layers-expanded {
+        background: rgba(13, 25, 18, 0.94) !important;
+        backdrop-filter: blur(10px);
+        color: #e8efea;
+        padding: 12px 14px !important;
+        font-family: var(--f-teks);
+        font-size: 12.5px;
+      }
+
+      .leaflet-control-attribution {
+        font-size: 10px !important;
+        background: rgba(255, 255, 255, 0.7) !important;
+      }
+
+      /* =====================================================================
+   Dok alat
+   ===================================================================== */
+
+      .dock {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px;
+        background: rgba(13, 25, 18, 0.9);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        box-shadow: var(--bayang-ambang);
+      }
+
+      .dock-body {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        overflow: hidden;
+      }
+
+      /* Tombol perkecil/perbesar duduk di puncak dok, dipisah dari alat lain */
+      .dock-toggle {
+        color: rgba(255, 255, 255, 0.45);
+        margin-bottom: 2px;
+      }
+
+      .dock-toggle:hover {
+        color: #ffffff;
+      }
+
+      .dock-toggle i {
+        transition: transform 0.2s ease;
+      }
+
+      /* Saat diciutkan: sembunyikan seluruh alat, sisakan tombol perkecil saja */
+      .dock.is-minim .dock-body {
+        display: none;
+      }
+
+      .dock.is-minim .dock-toggle {
+        margin-bottom: 0;
+      }
+
+      .dock.is-minim .dock-toggle i {
+        transform: rotate(180deg);
+      }
+
+      .dock-sep {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+        margin: 2px 4px;
+      }
+
+      .dock-btn {
+        position: relative;
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border: none;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.62);
+        border-radius: 10px;
+        font-size: 15px;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          transform 0.15s;
+      }
+
+      .dock-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+      }
+
+      .dock-btn[aria-pressed="true"] {
+        background: var(--daun);
+        color: #ffffff;
+        box-shadow: 0 2px 10px rgba(31, 168, 86, 0.45);
+      }
+
+      .dock-btn--danger[aria-pressed="true"] {
+        background: var(--bata);
+        box-shadow: 0 2px 10px rgba(220, 38, 38, 0.45);
+      }
+
+      /* Tombol gaya memakai contoh warna & ikon yang sedang dipakai, bukan
+   ikon generik — pilihan aktif terbaca tanpa membuka paletnya */
+      .dock-gaya[aria-pressed="true"] {
+        background: rgba(255, 255, 255, 0.14);
+        box-shadow: none;
+      }
+
+      .gaya-contoh {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #ffffff;
+        font-size: 10.5px;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+      }
+
+      .gaya-contoh.is-terang {
+        color: var(--tinta);
+      }
+
+      /* Tooltip: menerangkan alat sekaligus mengajarkan pintasan papan tik */
+      .dock-tip {
+        position: absolute;
+        left: calc(100% + 10px);
+        top: 50%;
+        transform: translateY(-50%) translateX(-4px);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 10px;
+        background: var(--tinta);
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: var(--r-kecil);
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition:
+          opacity 0.15s,
+          transform 0.15s;
+        box-shadow: var(--bayang-ambang);
+      }
+
+      .dock-btn:hover .dock-tip,
+      .dock-btn:focus-visible .dock-tip {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+      }
+
+      kbd {
+        font-family: var(--f-data);
+        font-size: 10px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        padding: 1px 5px;
+      }
+
+      /* =====================================================================
+   Pemilih gaya penanda
+   ===================================================================== */
+
+      .styler {
+        position: absolute;
+        top: 14px;
+        left: 68px;
+        z-index: 1000;
+        width: 208px;
+        padding: 12px;
+        background: rgba(13, 25, 18, 0.9);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        box-shadow: var(--bayang-ambang);
+        animation: masuk 0.18s ease-out;
+      }
+
+      @keyframes masuk {
+        from {
+          opacity: 0;
+          transform: translateX(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .styler-label {
+        margin: 0 0 7px 0;
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.42);
+      }
+
+      .styler-label + * + .styler-label {
+        margin-top: 12px;
+      }
+
+      .icon-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 3px;
+      }
+
+      .icon-btn {
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+        border: none;
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.6);
+        border-radius: 7px;
+        font-size: 11.5px;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+
+      .icon-btn:hover {
+        background: rgba(255, 255, 255, 0.16);
+        color: #ffffff;
+      }
+
+      .icon-btn[aria-pressed="true"] {
+        background: #ffffff;
+        color: var(--tinta);
+      }
+
+      .color-row {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 3px;
+      }
+
+      .swatch {
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: none;
+        padding: 0;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s;
+      }
+
+      .swatch:hover {
+        transform: scale(1.2);
+      }
+
+      .swatch[aria-pressed="true"] {
+        box-shadow:
+          0 0 0 2px var(--tinta),
+          0 0 0 3.5px #ffffff;
+        transform: scale(1.1);
+      }
+
+      /* =====================================================================
+   Bar menggambar & status
+   ===================================================================== */
+
+      .drawbar {
+        position: absolute;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 8px 7px 14px;
+        background: rgba(13, 25, 18, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        box-shadow: var(--bayang-ambang);
+        animation: turun 0.18s ease-out;
+      }
+
+      @keyframes turun {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+
+      .drawbar-count {
+        font-family: var(--f-data);
+        font-size: 11.5px;
+        color: rgba(255, 255, 255, 0.75);
+        margin-right: 4px;
+        white-space: nowrap;
+      }
+
+      .statusbar {
+        position: absolute;
+        left: 14px;
+        bottom: 26px; /* menyisakan ruang untuk atribusi Leaflet */
+        right: 14px;
+        z-index: 900;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        pointer-events: none;
+        transition: opacity 0.15s;
+      }
+
+      /* Popup terbuka: petunjuk mode sudah tidak relevan dan hanya menghalangi */
+      body.popup-terbuka .statusbar {
+        opacity: 0;
+      }
+
+      .status-hint,
+      .status-coord {
+        margin: 0;
+        padding: 7px 13px;
+        background: rgba(13, 25, 18, 0.85);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 4px 16px rgba(6, 20, 12, 0.25);
+      }
+
+      .status-hint b {
+        color: #ffffff;
+      }
+
+      .status-coord {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-family: var(--f-data);
+        font-size: 11px;
+        letter-spacing: -0.02em;
+      }
+
+      .status-coord i {
+        color: var(--padi);
+        font-size: 10px;
+      }
+
+      /* =====================================================================
+   Penanda — kontras tinggi di atas citra satelit
+   Resepnya: warna pekat + cincin putih tebal + bayangan.
+   Kombinasi itu tetap terbaca di atas latar gelap maupun terang.
+   ===================================================================== */
+
+      .penanda {
+        background: none;
+        border: none;
+      }
+
+      .penanda-badge {
+        position: relative;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--warna);
+        border: 3px solid #ffffff;
+        display: grid;
+        place-items: center;
+        color: #ffffff;
+        font-size: 14px;
+        box-shadow:
+          0 3px 12px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(0, 0, 0, 0.3);
+        transition: transform 0.15s ease-out;
+      }
+
+      /* Warna terang butuh ikon gelap agar tetap terbaca */
+      .penanda-badge.is-terang {
+        color: #0d1912;
+      }
+
+      /* Lencana kamera: penanda berfoto langsung terbaca dari peta */
+      .penanda-foto {
+        position: absolute;
+        right: -4px;
+        bottom: -3px;
+        width: 16px;
+        height: 16px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: #ffffff;
+        color: var(--tinta);
+        font-size: 7.5px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+      }
+
+      .penanda-ekor {
+        width: 0;
+        height: 0;
+        margin: -3px auto 0 auto;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 10px solid #ffffff;
+        filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
+      }
+
+      .penanda:hover .penanda-badge,
+      .penanda.is-sorot .penanda-badge {
+        transform: scale(1.18) translateY(-3px);
+      }
+
+      .penanda.is-sorot .penanda-badge {
+        box-shadow:
+          0 3px 12px rgba(0, 0, 0, 0.5),
+          0 0 0 4px rgba(245, 197, 24, 0.9);
+      }
+
+      /* =====================================================================
+   Popup
+   ===================================================================== */
+
+      .leaflet-popup-content-wrapper {
+        border-radius: var(--r-sedang) !important;
+        box-shadow: var(--bayang-ambang) !important;
+        padding: 4px !important;
+      }
+
+      .leaflet-popup-content {
+        margin: 10px 12px !important;
+        font-family: var(--f-teks);
+      }
+
+      .pop {
+        min-width: 200px;
+      }
+
+      /* Foto memenuhi lebar popup: margin negatif melawan padding bawaan
+   Leaflet, sehingga gambar mentok ke tepi seperti kartu berfoto */
+      .pop-foto {
+        position: relative;
+        display: block;
+        width: calc(100% + 24px);
+        margin: -10px -12px 11px -12px;
+        padding: 0;
+        border: none;
+        border-radius: 10px 10px 0 0;
+        overflow: hidden;
+        background: #e4eae6;
+        cursor: zoom-in;
+      }
+
+      .pop-foto img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        transition: transform 0.35s ease-out;
+      }
+
+      .pop-foto:hover img {
+        transform: scale(1.05);
+      }
+
+      /* Lapisan "Perbesar" hanya muncul saat disentuh kursor — foto tetap
+   jadi bintangnya, petunjuknya datang saat dibutuhkan */
+      .pop-foto-lapis {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+        gap: 5px;
+        padding: 9px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #ffffff;
+        background: linear-gradient(to top, rgba(6, 14, 10, 0.62), rgba(6, 14, 10, 0) 55%);
+        opacity: 0;
+        transition: opacity 0.18s;
+      }
+
+      .pop-foto:hover .pop-foto-lapis,
+      .pop-foto:focus-visible .pop-foto-lapis {
+        opacity: 1;
+      }
+
+      .pop-foto-lapis i {
+        font-size: 10px;
+      }
+
+      .pop-head {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+
+      .pop-ikon {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #ffffff;
+        font-size: 12px;
+        flex-shrink: 0;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+      }
+
+      .pop-ikon.is-terang {
+        color: var(--tinta);
+      }
+
+      .pop-judul {
+        font-family: var(--f-display);
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--tinta);
+        line-height: 1.25;
+      }
+
+      .pop-tags {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        margin-top: 9px;
+      }
+
+      .pop-tag {
+        background: #e9f7ee;
+        color: var(--daun-tua);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 999px;
+      }
+
+      .pop-desc {
+        margin: 9px 0 0 0;
+        font-size: 12.5px;
+        line-height: 1.55;
+        color: #46564c;
+      }
+
+      .pop-coord {
+        margin: 9px 0 0 0;
+        font-family: var(--f-data);
+        font-size: 10.5px;
+        color: var(--batu-muda);
+      }
+
+      .pop-aksi {
+        display: flex;
+        gap: 6px;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--garis);
+      }
+
+      /* --- Formulir di dalam popup --- */
+      .pop-form .pop-label {
+        display: block;
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--batu-muda);
+        margin-bottom: 5px;
+      }
+
+      .pop-input {
+        width: 100%;
+        border: 1.5px solid var(--garis);
+        border-radius: var(--r-kecil);
+        padding: 8px 10px;
+        font-family: var(--f-teks);
+        font-size: 13px;
+        color: var(--tinta);
+        margin-bottom: 10px;
+        background: #fbfcfb;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+
+      .pop-input:focus {
+        outline: none;
+        border-color: var(--daun);
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(31, 168, 86, 0.14);
+      }
+
+      textarea.pop-input {
+        resize: vertical;
+        line-height: 1.5;
+        min-height: 62px;
+      }
+
+      /* --- Foto di dalam formulir --- */
+      .foto-slot {
+        margin-bottom: 10px;
+      }
+
+      .foto-zona {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 14px;
+        border: 1.5px dashed var(--garis);
+        border-radius: var(--r-kecil);
+        background: #fbfcfb;
+        color: var(--batu);
+        font-size: 12.5px;
+        font-weight: 600;
+        transition:
+          border-color 0.15s,
+          background 0.15s,
+          color 0.15s;
+      }
+
+      .foto-zona:hover {
+        border-color: var(--daun);
+        background: #f2fbf5;
+        color: var(--daun-tua);
+      }
+
+      .foto-zona i {
+        font-size: 14px;
+      }
+
+      .foto-tunggu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 16px;
+        border-radius: var(--r-kecil);
+        background: #f1f4f2;
+        color: var(--batu);
+        font-size: 12.5px;
+        font-weight: 600;
+      }
+
+      .foto-preview {
+        position: relative;
+        border-radius: var(--r-kecil);
+        overflow: hidden;
+        background: #eef2ef;
+      }
+
+      .foto-preview img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+      }
+
+      .foto-buang {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 26px;
+        height: 26px;
+        display: grid;
+        place-items: center;
+        border: none;
+        border-radius: 50%;
+        background: rgba(13, 25, 18, 0.78);
+        backdrop-filter: blur(4px);
+        color: #ffffff;
+        font-size: 11px;
+        transition: background 0.15s;
+      }
+
+      .foto-buang:hover {
+        background: var(--bata);
+      }
+
+      /* =====================================================================
+   Foto ukuran penuh
+   ===================================================================== */
+
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: grid;
+        place-items: center;
+        padding: 32px;
+        background: rgba(6, 14, 10, 0.88);
+        backdrop-filter: blur(6px);
+        animation: pudar-masuk 0.18s ease-out;
+        cursor: zoom-out;
+      }
+
+      @keyframes pudar-masuk {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .lightbox figure {
+        margin: 0;
+        max-width: min(920px, 100%);
+        cursor: default;
+      }
+
+      .lightbox img {
+        display: block;
+        max-width: 100%;
+        max-height: 78vh;
+        border-radius: var(--r-sedang);
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+      }
+
+      .lightbox figcaption {
+        margin-top: 12px;
+        text-align: center;
+        font-family: var(--f-display);
+        font-size: 15px;
+        font-weight: 600;
+        color: #ffffff;
+      }
+
+      .lightbox-tutup {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border: none;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.14);
+        color: #ffffff;
+        font-size: 15px;
+        transition: background 0.15s;
+      }
+
+      .lightbox-tutup:hover {
+        background: rgba(255, 255, 255, 0.28);
+      }
+
+      .item-foto-tanda {
+        font-size: 9px;
+        color: var(--daun);
+        margin-right: 2px;
+      }
+
+      /* =====================================================================
+   Tombol
+   ===================================================================== */
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border: none;
+        border-radius: var(--r-kecil);
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          transform 0.1s;
+        white-space: nowrap;
+      }
+
+      .btn:active:not(:disabled) {
+        transform: scale(0.97);
+      }
+
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .btn i {
+        font-size: 10.5px;
+      }
+
+      .btn--ok {
+        background: var(--daun);
+        color: #ffffff;
+      }
+
+      .btn--ok:hover:not(:disabled) {
+        background: var(--daun-tua);
+      }
+
+      .btn--ghost {
+        background: #f1f4f2;
+        color: #45564b;
+      }
+
+      .btn--ghost:hover:not(:disabled) {
+        background: #e4e9e6;
+        color: var(--tinta);
+      }
+
+      .btn--danger {
+        color: var(--bata);
+      }
+
+      .btn--danger:hover:not(:disabled) {
+        background: #fdeaea;
+        color: #b91c1c;
+      }
+
+      /* Tombol hantu di atas panel gelap perlu palet terbalik */
+      .drawbar .btn--ghost {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .drawbar .btn--ghost:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+      }
+
+      /* =====================================================================
+   Panel daftar penanda
+   ===================================================================== */
+
+      .panel {
+        background: var(--kertas);
+        border-radius: var(--r-besar);
+        box-shadow: var(--bayang-kartu);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 16px 16px 12px 16px;
+        border-bottom: 1px solid var(--garis);
+      }
+
+      .panel-head h2 {
+        font-family: var(--f-display);
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+
+      .panel-count {
+        font-family: var(--f-data);
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--batu);
+        background: #f1f4f2;
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+
+      .panel-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .panel-foot {
+        display: flex;
+        gap: 5px;
+        padding: 10px;
+        border-top: 1px solid var(--garis);
+        background: #fafbfa;
+      }
+
+      .panel-foot .btn {
+        flex: 1;
+        padding: 8px 6px;
+        font-size: 11.5px;
+      }
+
+      /* --- Keadaan kosong: ajakan bertindak, bukan sekadar pemberitahuan --- */
+      .kosong {
+        margin: auto;
+        text-align: center;
+        padding: 28px 18px;
+      }
+
+      .kosong-ikon {
+        width: 46px;
+        height: 46px;
+        margin: 0 auto 12px auto;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: #f1f4f2;
+        color: var(--batu-muda);
+        font-size: 17px;
+      }
+
+      .kosong p {
+        margin: 0;
+        font-size: 12.5px;
+        line-height: 1.55;
+        color: var(--batu);
+      }
+
+      .kosong b {
+        color: var(--tinta);
+      }
+
+      /* --- Baris penanda --- */
+      .item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 8px 9px;
+        border: none;
+        background: transparent;
+        border-radius: var(--r-sedang);
+        text-align: left;
+        transition: background 0.12s;
+      }
+
+      .item:hover {
+        background: #f1f4f2;
+      }
+
+      .item-dot {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #ffffff;
+        font-size: 11px;
+        flex-shrink: 0;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+      }
+
+      .item-dot.is-terang {
+        color: var(--tinta);
+      }
+
+      .item-teks {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .item-nama {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--tinta);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .item-jenis {
+        display: block;
+        font-size: 10.5px;
+        color: var(--batu-muda);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .item-hapus {
+        width: 26px;
+        height: 26px;
+        display: grid;
+        place-items: center;
+        border: none;
+        background: transparent;
+        color: var(--batu-muda);
+        border-radius: 7px;
+        font-size: 11px;
+        opacity: 0;
+        transition:
+          opacity 0.12s,
+          background 0.12s,
+          color 0.12s;
+        flex-shrink: 0;
+      }
+
+      .item:hover .item-hapus,
+      .item-hapus:focus-visible {
+        opacity: 1;
+      }
+
+      .item-hapus:hover {
+        background: #fdeaea;
+        color: var(--bata);
+      }
+
+      /* =====================================================================
+   Notifikasi
+   ===================================================================== */
+
+      .toasts {
+        position: absolute;
+        bottom: 62px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1100;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 7px;
+        pointer-events: none;
+      }
+
+      .toast {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 15px;
+        background: var(--tinta);
+        color: #ffffff;
+        font-size: 12.5px;
+        font-weight: 500;
+        border-radius: 999px;
+        box-shadow: var(--bayang-ambang);
+        animation: naik 0.22s ease-out;
+        pointer-events: auto;
+      }
+
+      .toast i {
+        font-size: 11px;
+        color: var(--daun);
+      }
+
+      .toast--gagal i {
+        color: #f87171;
+      }
+
+      .toast-batal {
+        border: none;
+        background: rgba(255, 255, 255, 0.14);
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 999px;
+        margin-left: 2px;
+      }
+
+      .toast-batal:hover {
+        background: rgba(255, 255, 255, 0.26);
+      }
+
+      .toast.is-pergi {
+        animation: pudar 0.22s ease-in forwards;
+      }
+
+      @keyframes naik {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pudar {
+        to {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+      }
+
+      /* =====================================================================
+   Poster Peta Potensi Desa
+   ===================================================================== */
+
+      .btn--poster {
+        margin: 10px;
+        padding: 11px;
+        background: var(--kanopi);
+        color: #ffffff;
+        font-size: 12.5px;
+      }
+
+      .btn--poster:hover {
+        background: var(--daun-tua);
+      }
+
+      .btn--poster i {
+        color: var(--padi);
+        font-size: 12px;
+      }
+
+      .poster-layar {
+        position: fixed;
+        inset: 0;
+        z-index: 1500;
+        background: #e7ebe8;
+        display: flex;
+        flex-direction: column;
+        animation: pudar-masuk 0.2s ease-out;
+      }
+
+      .poster-bar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 14px;
+        background: var(--tinta);
+        flex-shrink: 0;
+      }
+
+      .poster-petunjuk {
+        margin: 0 auto 0 0;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      .poster-bar .btn--ghost {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+      }
+
+      .poster-bar .btn--ghost:hover {
+        background: rgba(255, 255, 255, 0.22);
+      }
+
+      .poster-gulung {
+        flex: 1;
+        overflow: auto;
+        padding: 20px;
+        display: grid;
+        place-items: center;
+      }
+
+      /* Poster diukur dalam milimeter, bukan piksel. Ukuran piksel diterjemahkan
+   printer sesuka hatinya — hasilnya poster mengambang di tengah kertas
+   dengan sepertiga halaman terbuang. Milimeter memetakan tepat ke kertas:
+   404×281 mm = A3 lanskap dikurangi margin 8 mm. */
+      .poster {
+        position: relative;
+        width: 404mm;
+        height: 281mm;
+        /* Warna penanda & legenda adalah isi peta, bukan hiasan — jangan
+       dibuang printer saat mode hemat tinta */
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        flex-shrink: 0;
+        display: grid;
+        grid-template-columns: 54mm 1fr 54mm 78mm;
+        gap: 3mm;
+        padding: 4mm;
+        background: #f6f7f5;
+        border: 1.6mm solid #c9a227;
+        box-shadow: 0 14px 50px rgba(6, 20, 12, 0.28);
+      }
+
+      .poster-kiri,
+      .poster-kanan {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        gap: 8px;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .poster-tengah {
+        position: relative;
+        min-width: 0;
+      }
+
+      /* Panah utara & skala: tanpa keduanya, cetakan ini cuma gambar —
+   bukan peta yang bisa dipakai mengukur dan mengorientasi diri */
+      .poster-utara {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 42px;
+        height: 56px;
+        padding: 5px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid #2f4034;
+        z-index: 600;
+      }
+
+      .poster .leaflet-control-scale {
+        margin: 0 0 10px 10px;
+      }
+
+      .poster .leaflet-control-scale-line {
+        border: 2px solid #22301f;
+        border-top: none;
+        background: rgba(255, 255, 255, 0.85);
+        color: #22301f;
+        font-family: var(--f-data);
+        font-size: 9.5px;
+        line-height: 1.2;
+        padding: 2px 5px 1px;
+        box-shadow: none;
+      }
+
+      .poster-peta {
+        position: absolute;
+        inset: 0;
+        border: 2px solid #2f4034;
+        background: #cfd8d2;
+      }
+
+      /* --- Kartu foto --- */
+      .pp-kartu {
+        position: relative;
+        margin: 0;
+        background: #ffffff;
+        padding: 6px 6px 0 6px;
+        border: 1px solid #d3dad5;
+        box-shadow: 0 2px 8px rgba(6, 20, 12, 0.14);
+      }
+
+      .pp-kartu img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        background: #e4eae6;
+      }
+
+      .pp-kartu figcaption {
+        padding: 5px 2px 6px 2px;
+        font-size: 9.5px;
+        font-weight: 700;
+        line-height: 1.3;
+        color: #2f4034;
+        text-align: center;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+
+      .pp-kartu-nomor {
+        position: absolute;
+        top: -8px;
+        left: -8px;
+        width: 22px;
+        height: 22px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--kanopi);
+        color: #ffffff;
+        font-family: var(--f-data);
+        font-size: 11px;
+        font-weight: 500;
+        border: 2px solid #ffffff;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        z-index: 2;
+      }
+
+      .poster-kosong {
+        margin: auto;
+        font-size: 11px;
+        line-height: 1.6;
+        color: var(--batu);
+        text-align: center;
+      }
+
+      /* --- Nomor pada penanda di peta poster --- */
+      .pp-nomor {
+        position: absolute;
+        right: -6px;
+        top: -6px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 3px;
+        display: grid;
+        place-items: center;
+        border-radius: 9px;
+        background: var(--kanopi);
+        color: #ffffff;
+        font-family: var(--f-data);
+        font-size: 9.5px;
+        border: 1.5px solid #ffffff;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      }
+
+      /* --- Tali penghubung kartu ke titik --- */
+      .poster-tali {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 500;
+      }
+
+      /* Dua lapis lagi: putih tebal di bawah agar tali tetap terbaca saat
+   melintasi citra satelit yang gelap */
+      .pp-tali-bawah {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.92);
+        stroke-width: 4.5;
+      }
+
+      /* Cukup tebal untuk tetap terbaca setelah dicetak — garis 1,4 px
+   menghilang di atas kertas */
+      .pp-tali {
+        fill: none;
+        stroke: #22301f;
+        stroke-width: 2.2;
+      }
+
+      .pp-tali-titik {
+        fill: #c9a227;
+        stroke: #ffffff;
+        stroke-width: 1.5;
+      }
+
+      /* --- Blok judul & legenda --- */
+      .poster-blok {
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        border: 2px solid #2f4034;
+        padding: 16px;
+      }
+
+      .poster-judul {
+        font-family: var(--f-display);
+        font-size: 19px;
+        font-weight: 800;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        text-align: center;
+        margin: 0;
+        color: var(--kanopi);
+      }
+
+      .poster-sub {
+        margin: 7px 0 0 0;
+        font-size: 11px;
+        text-align: center;
+        color: #55655b;
+      }
+
+      [contenteditable]:hover {
+        background: #f4f8f5;
+        border-radius: 4px;
+      }
+
+      [contenteditable]:focus {
+        outline: 2px solid var(--daun);
+        outline-offset: 2px;
+        border-radius: 4px;
+        background: #ffffff;
+      }
+
+      .poster-garis-hias {
+        height: 3px;
+        margin: 14px 0;
+        background: linear-gradient(90deg, var(--kanopi) 0 60%, #c9a227 60% 100%);
+        flex-shrink: 0;
+      }
+
+      /* --- Peta inset --- */
+      .poster-inset {
+        flex-shrink: 0;
+        margin-bottom: 14px;
+      }
+
+      #pInset {
+        height: 150px;
+        border: 1.5px solid #2f4034;
+        background: #cfd8d2;
+      }
+
+      .poster-inset-ket {
+        margin: 5px 0 0 0;
+        font-size: 8.5px;
+        line-height: 1.4;
+        color: var(--batu);
+        text-align: center;
+      }
+
+      .poster-legenda {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .poster-legenda h3 {
+        margin: 0 0 10px 0;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #55655b;
+      }
+
+      .pp-legenda-baris {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 5px 0;
+        border-bottom: 1px dotted #d3dad5;
+      }
+
+      .pp-legenda-dot {
+        width: 21px;
+        height: 21px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #ffffff;
+        font-size: 9px;
+        flex-shrink: 0;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+      }
+
+      .pp-legenda-dot.is-terang {
+        color: var(--tinta);
+      }
+
+      .pp-legenda-teks {
+        flex: 1;
+        font-size: 11px;
+        font-weight: 600;
+        color: #2f4034;
+      }
+
+      .pp-legenda-jumlah {
+        font-family: var(--f-data);
+        font-size: 10px;
+        color: var(--batu);
+      }
+
+      .poster-kaki {
+        flex-shrink: 0;
+        border-top: 2px solid var(--kanopi);
+        padding-top: 10px;
+        margin-top: 10px;
+      }
+
+      .poster-sumber {
+        margin: 0;
+        font-size: 9px;
+        color: var(--batu-muda);
+      }
+
+      .poster-tim {
+        margin: 6px 0 0 0;
+        font-family: var(--f-display);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--kanopi);
+      }
+
+      /* --- Cetak: hanya posternya, seukuran A3 lanskap --- */
+      @page {
+        size: A3 landscape;
+        margin: 8mm;
+      }
+
+      @media print {
+        body.mode-poster > *:not(.poster-layar) {
+          display: none !important;
+        }
+
+        .poster-layar {
+          position: static;
+          background: #ffffff;
+        }
+
+        .poster-bar {
+          display: none !important;
+        }
+
+        .poster-gulung {
+          overflow: visible;
+          padding: 0;
+          display: block;
+        }
+
+        /* 1400×990 px ≈ 370×262 mm — sudah muat utuh di A3 lanskap
+       (420×297 mm dikurangi margin 8 mm), jadi tidak perlu diskalakan. */
+        .poster {
+          box-shadow: none;
+          margin: 0 auto;
+        }
+
+        [contenteditable]:hover {
+          background: none;
+        }
+
+        /* Mesin cetak merasterkan bayangan berblur jadi kotak abu-abu pekat.
+       Di kertas, garis tepi yang tegas lebih baik daripada bayangan. */
+        .poster .penanda-badge,
+        .pp-kartu,
+        .pp-kartu-nomor,
+        .pp-nomor,
+        .pp-legenda-dot,
+        .poster-blok {
+          box-shadow: none !important;
+        }
+
+        .poster .penanda-ekor {
+          filter: none !important;
+        }
+
+        .pp-kartu {
+          border: 1px solid #b9c3bc;
+        }
+      }
+
+      /* =====================================================================
+   Tablet — panel pindah ke bawah peta
+   ===================================================================== */
+
+      @media (max-width: 900px) {
+        .workspace {
+          grid-template-columns: 1fr;
+          grid-template-rows: minmax(380px, 1fr) auto;
+          height: auto;
+          min-height: calc(100vh - 66px);
+        }
+
+        .panel-list {
+          max-height: 224px;
+        }
+
+        .topbar-meta {
+          display: none;
+        }
+      }
+
+      /* =====================================================================
+   Ponsel — dok jadi bar mendatar, gaya penanda jadi lembar bawah
+   ===================================================================== */
+
+      @media (max-width: 620px) {
+        .topbar {
+          padding: 12px 14px;
+          gap: 12px;
+        }
+
+        .back span {
+          display: none;
+        }
+
+        .back {
+          padding: 9px 11px;
+        }
+
+        .brand h1 {
+          font-size: 19px;
+        }
+
+        .workspace {
+          padding: 10px;
+          gap: 10px;
+          /* Peta perlu tinggi ekstra: popup berfoto butuh ruang bernapas */
+          grid-template-rows: minmax(420px, 68vh) auto;
+        }
+
+        /* Dok mendatar di bawah agar terjangkau ibu jari */
+        .dock {
+          top: auto;
+          bottom: 12px;
+          left: 50%;
+          transform: translateX(-50%);
+          flex-direction: row;
+        }
+
+        .dock-sep {
+          width: 1px;
+          height: auto;
+          margin: 4px 2px;
+        }
+
+        .dock-body {
+          flex-direction: row;
+        }
+
+        .dock-toggle {
+          margin-bottom: 0;
+          margin-right: 2px;
+        }
+
+        .dock.is-minim .dock-toggle {
+          margin-right: 0;
+        }
+
+        .dock-toggle i {
+          transform: rotate(-90deg);
+        }
+
+        .dock.is-minim .dock-toggle i {
+          transform: rotate(90deg);
+        }
+
+        .dock-tip {
+          left: 50%;
+          top: auto;
+          bottom: calc(100% + 10px);
+          transform: translateX(-50%) translateY(4px);
+        }
+
+        .dock-btn:hover .dock-tip,
+        .dock-btn:focus-visible .dock-tip {
+          transform: translateX(-50%) translateY(0);
+        }
+
+        .dock-tip kbd {
+          display: none;
+        }
+
+        /* Gaya penanda naik dari bawah, di atas dok. Tersembunyi sampai
+       tombol gaya ditekan, supaya peta tetap lapang. */
+        .styler {
+          top: auto;
+          bottom: 66px;
+          left: 10px;
+          right: 10px;
+          width: auto;
+          padding: 10px;
+          animation: naik 0.18s ease-out;
+        }
+
+        .icon-grid {
+          grid-template-columns: repeat(9, 1fr);
+          gap: 4px;
+        }
+
+        .icon-btn {
+          font-size: 12.5px;
+        }
+
+        .color-row {
+          gap: 4px;
+        }
+
+        /* Popup harus muat di layar sempit tanpa mengorbankan fotonya */
+        .pop-foto img {
+          aspect-ratio: 16 / 9;
+        }
+
+        .leaflet-popup-scrolled {
+          border: none !important;
+        }
+
+        .statusbar {
+          top: 12px;
+          bottom: auto;
+          left: 12px;
+          right: 12px;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 6px;
+        }
+
+        .status-hint {
+          font-size: 11.5px;
+          text-align: center;
+        }
+
+        .status-coord {
+          display: none;
+        }
+
+        .drawbar {
+          top: auto;
+          bottom: 66px;
+          width: calc(100% - 20px);
+          justify-content: center;
+          padding: 7px;
+        }
+
+        .toasts {
+          bottom: 128px;
+        }
+
+        .panel-list {
+          max-height: 190px;
+        }
+      }
+
+      /* =====================================================================
+   Hormati preferensi gerak minimal
+   ===================================================================== */
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar-custom">
+      <div class="container">
+        <a class="navbar-brand" href="index.html">
+          <svg class="brand-mark" viewBox="0 0 40 40" fill="none">
+            <path d="M20 4L34 14V36H6V14L20 4Z" stroke="#D9A441" stroke-width="2" fill="none" />
+            <path d="M20 4L20 20M20 20L10 30M20 20L30 30" stroke="#D9A441" stroke-width="1.5" />
+          </svg>
+          Desa Cipurwasari
+        </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Buka menu"><span></span><span></span><span></span></button>
+        <div class="navbar-nav" id="navList">
+          <a class="nav-link" href="index.html">Profil</a>
+          <a class="nav-link" href="edukasi.html">Edukasi</a>
+          <a class="nav-link" href="peta.html">Peta</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="topbar">
+      <a href="index.html" class="back">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Kembali</span>
+      </a>
+
+      <div class="brand">
+        <span class="brand-eyebrow">Informasi Geografis</span>
+        <h1>Desa Cipurwasari</h1>
+      </div>
+
+      <p class="topbar-meta">Kec. Tegalwaru<span>·</span>Kab. Karawang<span>·</span>Jawa Barat</p>
+    </header>
+
+    <main class="workspace">
+      <!-- ============ Kanvas peta ============ -->
+      <section class="stage">
+        <div id="map"></div>
+
+        <!-- Dok alat -->
+        <div class="dock" id="dock" role="toolbar" aria-label="Alat penandaan">
+          <button class="dock-btn dock-toggle" id="btnMinimize" aria-pressed="false" aria-expanded="true" aria-controls="dockBody">
+            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+            <span class="dock-tip">Perkecil dok</span>
+          </button>
+          <div class="dock-body" id="dockBody">
+            <button class="dock-btn" data-mode="pilih" aria-pressed="false">
+              <i class="fa-solid fa-hand" aria-hidden="true"></i>
+              <span class="dock-tip">Geser peta <kbd>1</kbd></span>
+            </button>
+            <button class="dock-btn" data-mode="pin" aria-pressed="true">
+              <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+              <span class="dock-tip">Taruh penanda <kbd>2</kbd></span>
+            </button>
+            <button class="dock-btn" data-mode="garis" aria-pressed="false">
+              <i class="fa-solid fa-pen-nib" aria-hidden="true"></i>
+              <span class="dock-tip">Gambar garis <kbd>3</kbd></span>
+            </button>
+            <button class="dock-btn" data-mode="area" aria-pressed="false">
+              <i class="fa-solid fa-draw-polygon" aria-hidden="true"></i>
+              <span class="dock-tip">Gambar area <kbd>4</kbd></span>
+            </button>
+            <span class="dock-sep" aria-hidden="true"></span>
+            <button class="dock-btn dock-btn--danger" data-mode="hapus" aria-pressed="false">
+              <i class="fa-solid fa-eraser" aria-hidden="true"></i>
+              <span class="dock-tip">Hapus penanda <kbd>5</kbd></span>
+            </button>
+            <span class="dock-sep" aria-hidden="true"></span>
+            <button class="dock-btn dock-gaya" id="btnGaya" aria-pressed="false" aria-controls="styler">
+              <span class="gaya-contoh" id="gayaContoh"><i class="fa-solid fa-trash"></i></span>
+              <span class="dock-tip">Ganti ikon &amp; warna</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Pemilih gaya penanda (muncul saat alat penandaan aktif) -->
+        <div class="styler" id="styler" hidden>
+          <p class="styler-label">Ikon</p>
+          <div class="icon-grid" id="iconPalette"></div>
+          <p class="styler-label">Warna</p>
+          <div class="color-row" id="colorPalette"></div>
+        </div>
+
+        <!-- Bar kontrol saat menggambar garis / area -->
+        <div class="drawbar" id="drawbar" hidden>
+          <span class="drawbar-count" id="drawbarCount">0 titik</span>
+          <button class="btn btn--ok" id="btnFinish"><i class="fa-solid fa-check" aria-hidden="true"></i> Selesai</button>
+          <button class="btn btn--ghost" id="btnUndoPoint"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Mundur</button>
+          <button class="btn btn--ghost" id="btnCancel">Batal</button>
+        </div>
+
+        <!-- Status: petunjuk mode + pembacaan koordinat -->
+        <div class="statusbar">
+          <p class="status-hint" id="statusHint">Klik di peta untuk menaruh penanda.</p>
+          <p class="status-coord" id="statusCoord">
+            <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
+            <span id="coordText">—</span>
+          </p>
+        </div>
+
+        <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+      </section>
+
+      <!-- ============ Panel daftar penanda ============ -->
+      <aside class="panel">
+        <header class="panel-head">
+          <h2>Penanda</h2>
+          <span class="panel-count" id="panelCount">0</span>
+        </header>
+
+        <div class="panel-list" id="panelList"></div>
+
+        <button class="btn btn--poster" id="btnPoster">
+          <i class="fa-solid fa-image" aria-hidden="true"></i>
+          Buat poster peta potensi
+        </button>
+
+        <footer class="panel-foot">
+          <button class="btn btn--ghost" id="btnExport"><i class="fa-solid fa-download" aria-hidden="true"></i> Ekspor</button>
+          <button class="btn btn--ghost" id="btnImport"><i class="fa-solid fa-upload" aria-hidden="true"></i> Impor</button>
+          <button class="btn btn--ghost btn--danger" id="btnClear"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> Kosongkan</button>
+          <input type="file" id="fileInput" accept=".geojson,.json" hidden />
+        </footer>
+      </aside>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      // =====================================================================
+      // Peta Informasi Geografis Cipurwasari — alat penandaan lapangan
+      // =====================================================================
+
+      const kordinatCipurwasari = [-6.522681, 107.201505];
+
+      // --- Sumber peta -----------------------------------------------------
+
+      // Atribusi sengaja diringkas: versi panjang Esri memakan dua baris penuh
+      // di layar ponsel, sementara kreditnya tetap tercantum.
+      const URL_SATELIT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+
+      const petaSatelit = L.tileLayer(URL_SATELIT, {
+        attribution: "Citra &copy; Esri",
+        maxZoom: 19,
+      });
+
+      const petaJalan = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap",
+        maxZoom: 19,
+      });
+
+      const map = L.map("map", {
+        center: kordinatCipurwasari,
+        zoom: 16,
+        layers: [petaSatelit],
+        zoomControl: false,
+        attributionControl: false,
+      });
+
+      L.control.attribution({ prefix: false, position: "bottomleft" }).addTo(map);
+
+      L.control.zoom({ position: "topright" }).addTo(map);
+      L.control
+        .layers(
+          {
+            "Citra satelit": petaSatelit,
+            "Peta jalan": petaJalan,
+          },
+          null,
+          { position: "topright" },
+        )
+        .addTo(map);
+
+      // =====================================================================
+      // Katalog ikon & warna
+      // =====================================================================
+
+      const KATALOG_IKON = [
+        { id: "trash", fa: "fa-solid fa-trash", label: "Tempat sampah" },
+        { id: "recycle", fa: "fa-solid fa-recycle", label: "Daur ulang" },
+        { id: "water", fa: "fa-solid fa-droplet", label: "Sumber air" },
+        { id: "house", fa: "fa-solid fa-house", label: "Balai desa" },
+        { id: "mosque", fa: "fa-solid fa-mosque", label: "Tempat ibadah" },
+        { id: "school", fa: "fa-solid fa-school", label: "Sekolah" },
+        { id: "health", fa: "fa-solid fa-house-medical", label: "Posyandu / kesehatan" },
+        { id: "store", fa: "fa-solid fa-store", label: "Warung / UMKM" },
+        { id: "farm", fa: "fa-solid fa-seedling", label: "Lahan pertanian" },
+        { id: "tree", fa: "fa-solid fa-tree", label: "Wisata Pegunungan" },
+        { id: "road", fa: "fa-solid fa-road", label: "Akses jalan" },
+        { id: "people", fa: "fa-solid fa-people-group", label: "Titik kumpul" },
+        { id: "warning", fa: "fa-solid fa-triangle-exclamation", label: "Titik rawan" },
+        { id: "flag", fa: "fa-solid fa-flag", label: "Lokasi proker" },
+        { id: "camera", fa: "fa-solid fa-camera", label: "Titik dokumentasi" },
+        { id: "star", fa: "fa-solid fa-star", label: "Penting" },
+        { id: "pin", fa: "fa-solid fa-location-dot", label: "Penanda umum" },
+        { id: "note", fa: "fa-solid fa-note-sticky", label: "Catatan" },
+      ];
+
+      // Warna pekat & jenuh — dipilih agar tetap terbaca di atas citra satelit
+      const KATALOG_WARNA = [
+        { id: "merah", hex: "#e11d48", label: "Merah" },
+        { id: "jingga", hex: "#f97316", label: "Jingga" },
+        { id: "kuning", hex: "#facc15", label: "Kuning" },
+        { id: "hijau", hex: "#16a34a", label: "Hijau" },
+        { id: "tosca", hex: "#06b6d4", label: "Tosca" },
+        { id: "biru", hex: "#2563eb", label: "Biru" },
+        { id: "ungu", hex: "#7c3aed", label: "Ungu" },
+        { id: "pink", hex: "#db2777", label: "Pink" },
+        { id: "hitam", hex: "#111827", label: "Hitam" },
+        { id: "putih", hex: "#f8fafc", label: "Putih" },
+      ];
+
+      // Warna terang perlu ikon gelap supaya tetap terbaca
+      const WARNA_TERANG = ["kuning", "putih"];
+
+      const cariIkon = (id) => KATALOG_IKON.find((i) => i.id === id) || KATALOG_IKON[16];
+      const cariWarna = (id) => KATALOG_WARNA.find((w) => w.id === id) || KATALOG_WARNA[0];
+
+      const NAMA_JENIS = { pin: "Titik", garis: "Garis", area: "Area" };
+
+      // =====================================================================
+      // Status aplikasi
+      // =====================================================================
+
+      const KUNCI_SIMPAN = "penanda-cipurwasari-v1";
+
+      const ponsel = () => window.matchMedia("(max-width: 620px)").matches;
+
+      const state = {
+        mode: "pin",
+        ikon: "trash",
+        warna: "merah",
+        // Di layar lebar palet muat berdampingan dengan peta; di ponsel palet
+        // menutupi separuh peta, jadi disimpan sampai benar-benar dibutuhkan.
+        gayaTerbuka: !ponsel(),
+        penanda: [], // { id, jenis, koordinat, ikon, warna, nama, catatan, foto }
+        titikSementara: [],
+      };
+
+      const lapisanPenanda = L.layerGroup().addTo(map);
+      const lapisanPratinjau = L.layerGroup().addTo(map);
+      const layerById = new Map();
+
+      const idBaru = () => "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+      const $ = (id) => document.getElementById(id);
+
+      // =====================================================================
+      // Bentuk visual berkontras tinggi
+      // =====================================================================
+
+      function buatIkonPin(item) {
+        const ikon = cariIkon(item.ikon);
+        const warna = cariWarna(item.warna);
+        const terang = WARNA_TERANG.includes(item.warna) ? " is-terang" : "";
+
+        // Lencana kamera menandai penanda berfoto langsung dari peta, tanpa
+        // perlu dibuka satu per satu
+        const lencanaFoto = item.foto ? '<span class="penanda-foto"><i class="fa-solid fa-camera"></i></span>' : "";
+
+        return L.divIcon({
+          className: "penanda",
+          html: `<div class="penanda-badge${terang}" style="--warna:${warna.hex}">
+                   <i class="${ikon.fa}"></i>
+                   ${lencanaFoto}
+               </div>
+               <div class="penanda-ekor"></div>`,
+          iconSize: [36, 46],
+          iconAnchor: [18, 44],
+          popupAnchor: [0, -42],
+        });
+      }
+
+      // Garis & area digambar dua lapis: casing putih tebal di bawah, warna di
+      // atas. Teknik kartografi standar supaya bentuk tetap terbaca di atas
+      // citra satelit apa pun, gelap maupun terang.
+      function buatGaris(koordinat, idWarna) {
+        const hex = cariWarna(idWarna).hex;
+        return L.layerGroup([L.polyline(koordinat, { color: "#ffffff", weight: 9, opacity: 0.92, lineCap: "round", lineJoin: "round" }), L.polyline(koordinat, { color: hex, weight: 5, lineCap: "round", lineJoin: "round" })]);
+      }
+
+      function buatArea(koordinat, idWarna) {
+        const hex = cariWarna(idWarna).hex;
+        return L.layerGroup([L.polygon(koordinat, { color: "#ffffff", weight: 8, opacity: 0.92, fill: false }), L.polygon(koordinat, { color: hex, weight: 4, fillColor: hex, fillOpacity: 0.3 })]);
+      }
+
+      const titikPusat = (item) => (item.jenis === "pin" ? item.koordinat : [item.koordinat.reduce((s, k) => s + k[0], 0) / item.koordinat.length, item.koordinat.reduce((s, k) => s + k[1], 0) / item.koordinat.length]);
+
+      const namaTampil = (item) => item.nama || cariIkon(item.ikon).label;
+
+      // =====================================================================
+      // Foto dokumentasi
+      // =====================================================================
+
+      const FOTO_SISI_MAKS = 1000; // piksel
+      const FOTO_MUTU = 0.72;
+
+      // Foto kamera ponsel bisa 3–8 MB, sedangkan localStorage cuma ~5 MB untuk
+      // seluruh data. Karena itu setiap gambar diperkecil & dikompres dulu
+      // sebelum disimpan — cukup untuk dokumentasi, jauh lebih ringan.
+      function kompresGambar(file) {
+        return new Promise((selesai, gagal) => {
+          if (!file.type.startsWith("image/")) {
+            gagal(new Error("Berkas itu bukan gambar."));
+            return;
+          }
+
+          const pembaca = new FileReader();
+          pembaca.onerror = () => gagal(new Error("Gambar gagal dibaca."));
+          pembaca.onload = () => {
+            const img = new Image();
+            img.onerror = () => gagal(new Error("Gambar gagal dibaca."));
+            img.onload = () => {
+              const skala = Math.min(1, FOTO_SISI_MAKS / Math.max(img.width, img.height));
+              const kanvas = document.createElement("canvas");
+              kanvas.width = Math.round(img.width * skala);
+              kanvas.height = Math.round(img.height * skala);
+              kanvas.getContext("2d").drawImage(img, 0, 0, kanvas.width, kanvas.height);
+              selesai(kanvas.toDataURL("image/jpeg", FOTO_MUTU));
+            };
+            img.src = pembaca.result;
+          };
+          pembaca.readAsDataURL(file);
+        });
+      }
+
+      // =====================================================================
+      // Notifikasi
+      // =====================================================================
+
+      function toast(pesan, opsi = {}) {
+        const el = document.createElement("div");
+        el.className = "toast" + (opsi.gagal ? " toast--gagal" : "");
+        el.innerHTML = `<i class="fa-solid ${opsi.gagal ? "fa-circle-exclamation" : "fa-circle-check"}"></i>
+                    <span class="toast-pesan"></span>`;
+        el.querySelector(".toast-pesan").textContent = pesan;
+
+        if (opsi.batal) {
+          const btn = document.createElement("button");
+          btn.className = "toast-batal";
+          btn.textContent = "Urungkan";
+          btn.addEventListener("click", () => {
+            opsi.batal();
+            tutup();
+          });
+          el.appendChild(btn);
+        }
+
+        $("toasts").appendChild(el);
+
+        const tutup = () => {
+          clearTimeout(waktu);
+          el.classList.add("is-pergi");
+          setTimeout(() => el.remove(), 220);
+        };
+        const waktu = setTimeout(tutup, opsi.batal ? 6000 : 2800);
+      }
+
+      // =====================================================================
+      // Popup
+      // =====================================================================
+
+      function isiPopup(item) {
+        const ikon = cariIkon(item.ikon);
+        const warna = cariWarna(item.warna);
+        const terang = WARNA_TERANG.includes(item.warna) ? " is-terang" : "";
+        const pusat = titikPusat(item);
+
+        const el = document.createElement("div");
+        el.className = "pop";
+        el.innerHTML = `
+        ${
+          item.foto
+            ? `
+        <button class="pop-foto" type="button" title="Lihat foto ukuran penuh">
+            <img alt="Foto dokumentasi penanda">
+            <span class="pop-foto-lapis"><i class="fa-solid fa-expand"></i> Perbesar</span>
+        </button>`
+            : ""
+        }
+        <div class="pop-head">
+            <span class="pop-ikon${terang}" style="background:${warna.hex}"><i class="${ikon.fa}"></i></span>
+            <span class="pop-judul"></span>
+        </div>
+        <div class="pop-tags">
+            <span class="pop-tag">${NAMA_JENIS[item.jenis]}</span>
+            <span class="pop-tag">${ikon.label}</span>
+        </div>
+        <p class="pop-desc"></p>
+        <p class="pop-coord"></p>
+        <div class="pop-aksi">
+            <button class="btn btn--ghost" data-aksi="ubah"><i class="fa-solid fa-pen"></i> Ubah</button>
+            <button class="btn btn--ghost btn--danger" data-aksi="hapus"><i class="fa-solid fa-trash"></i> Hapus</button>
+        </div>
+    `;
+
+        if (item.foto) {
+          el.querySelector(".pop-foto img").src = item.foto;
+          el.querySelector(".pop-foto").addEventListener("click", () => bukaLightbox(item));
+        }
+
+        // Teks dari pengguna diisi lewat textContent agar tidak pernah
+        // diperlakukan sebagai HTML.
+        el.querySelector(".pop-judul").textContent = namaTampil(item);
+
+        const desc = el.querySelector(".pop-desc");
+        if (item.catatan) desc.textContent = item.catatan;
+        else desc.remove();
+
+        el.querySelector(".pop-coord").textContent = `${pusat[0].toFixed(6)}, ${pusat[1].toFixed(6)}`;
+        el.querySelector('[data-aksi="ubah"]').addEventListener("click", () => bukaForm(item));
+        el.querySelector('[data-aksi="hapus"]').addEventListener("click", () => hapusPenanda(item.id));
+
+        return el;
+      }
+
+      function formPopup(item) {
+        const el = document.createElement("div");
+        el.className = "pop pop-form";
+        el.innerHTML = `
+        <label class="pop-label" for="fNama">Nama penanda</label>
+        <input class="pop-input" id="fNama" maxlength="60" placeholder="Contoh: TPS Dusun Krajan">
+        <label class="pop-label" for="fCatatan">Keterangan</label>
+        <textarea class="pop-input" id="fCatatan" rows="3" maxlength="400"
+                  placeholder="Kondisi lapangan, pengelola, atau catatan survei"></textarea>
+        <label class="pop-label">Foto</label>
+        <div class="foto-slot" id="fSlot"></div>
+        <input type="file" id="fFile" accept="image/*" hidden>
+        <div class="pop-aksi">
+            <button class="btn btn--ok" data-aksi="simpan"><i class="fa-solid fa-check"></i> Simpan</button>
+            <button class="btn btn--ghost" data-aksi="batal">Batal</button>
+        </div>
+    `;
+
+        const inNama = el.querySelector("#fNama");
+        const inCatatan = el.querySelector("#fCatatan");
+        const inFile = el.querySelector("#fFile");
+        const slot = el.querySelector("#fSlot");
+        inNama.value = item.nama || "";
+        inCatatan.value = item.catatan || "";
+
+        // Foto disunting di salinan sementara: batal berarti benar-benar batal
+        let fotoDraf = item.foto || "";
+
+        function gambarSlot() {
+          slot.innerHTML = "";
+          if (fotoDraf) {
+            const bungkus = document.createElement("div");
+            bungkus.className = "foto-preview";
+            const img = document.createElement("img");
+            img.src = fotoDraf;
+            img.alt = "Pratinjau foto";
+            const buang = document.createElement("button");
+            buang.className = "foto-buang";
+            buang.type = "button";
+            buang.title = "Buang foto";
+            buang.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            buang.addEventListener("click", () => {
+              fotoDraf = "";
+              gambarSlot();
+            });
+            bungkus.append(img, buang);
+            slot.appendChild(bungkus);
+          } else {
+            const zona = document.createElement("button");
+            zona.className = "foto-zona";
+            zona.type = "button";
+            zona.innerHTML = `<i class="fa-solid fa-camera"></i>
+                              <span>Ambil atau pilih foto</span>`;
+            zona.addEventListener("click", () => inFile.click());
+            slot.appendChild(zona);
+          }
+        }
+
+        inFile.addEventListener("change", async () => {
+          const file = inFile.files[0];
+          if (!file) return;
+          slot.innerHTML = '<div class="foto-tunggu"><i class="fa-solid fa-spinner fa-spin"></i> Menyiapkan foto…</div>';
+          try {
+            fotoDraf = await kompresGambar(file);
+          } catch (err) {
+            toast(err.message, { gagal: true });
+          }
+          inFile.value = "";
+          gambarSlot();
+        });
+
+        gambarSlot();
+
+        const tampilkanDetail = () => {
+          const layer = layerById.get(item.id);
+          if (layer) layer.setPopupContent(isiPopup(item));
+        };
+
+        el.querySelector('[data-aksi="simpan"]').addEventListener("click", () => {
+          item.nama = inNama.value.trim();
+          item.catatan = inCatatan.value.trim();
+          item.foto = fotoDraf;
+          simpan();
+          gambarUlangDaftar();
+
+          // Lencana kamera pada pin ikut menyesuaikan begitu foto berubah
+          const layer = layerById.get(item.id);
+          if (item.jenis === "pin") layer?.setIcon(buatIkonPin(item));
+
+          tampilkanDetail();
+        });
+
+        el.querySelector('[data-aksi="batal"]').addEventListener("click", tampilkanDetail);
+
+        // Enter di kolom nama menyimpan; Esc menutup popup
+        inNama.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            el.querySelector('[data-aksi="simpan"]').click();
+          }
+        });
+
+        L.DomEvent.disableClickPropagation(el);
+        L.DomEvent.disableScrollPropagation(el);
+        setTimeout(() => inNama.focus(), 60);
+        return el;
+      }
+
+      const bukaForm = (item) => {
+        const layer = layerById.get(item.id);
+        if (layer) layer.setPopupContent(formPopup(item));
+      };
+
+      // --- Foto ukuran penuh ---
+      function bukaLightbox(item) {
+        const el = document.createElement("div");
+        el.className = "lightbox";
+        el.innerHTML = `
+        <button class="lightbox-tutup" title="Tutup (Esc)"><i class="fa-solid fa-xmark"></i></button>
+        <figure>
+            <img alt="Foto dokumentasi penanda">
+            <figcaption></figcaption>
+        </figure>
+    `;
+        el.querySelector("img").src = item.foto;
+        el.querySelector("figcaption").textContent = namaTampil(item);
+
+        const tutup = () => {
+          el.remove();
+          document.removeEventListener("keydown", padaTombol);
+        };
+        const padaTombol = (e) => {
+          if (e.key === "Escape") tutup();
+        };
+
+        el.addEventListener("click", (e) => {
+          if (e.target === el || e.target.closest(".lightbox-tutup")) tutup();
+        });
+        document.addEventListener("keydown", padaTombol);
+        document.body.appendChild(el);
+      }
+
+      // =====================================================================
+      // Render penanda
+      // =====================================================================
+
+      // Popup harus muat di layar sempit: lebarnya mengikuti jendela dan
+      // tingginya dibatasi agar isinya bisa digulir, bukan terpotong.
+      const OPSI_POPUP = {
+        maxWidth: Math.min(300, window.innerWidth - 48),
+        minWidth: Math.min(210, window.innerWidth - 60),
+        maxHeight: Math.round(Math.min(330, window.innerHeight * 0.36)),
+        closeButton: true,
+        autoPanPadding: [14, 60],
+      };
+
+      function tambahKePeta(item) {
+        let layer;
+
+        if (item.jenis === "pin") {
+          layer = L.marker(item.koordinat, {
+            icon: buatIkonPin(item),
+            draggable: true,
+            riseOnHover: true,
+          });
+          layer.on("dragend", () => {
+            const ll = layer.getLatLng();
+            item.koordinat = [ll.lat, ll.lng];
+            simpan();
+            layer.setPopupContent(isiPopup(item));
+            toast("Penanda dipindahkan.");
+          });
+        } else {
+          layer = item.jenis === "garis" ? buatGaris(item.koordinat, item.warna) : buatArea(item.koordinat, item.warna);
+        }
+
+        layer.bindPopup(isiPopup(item), OPSI_POPUP);
+        layer.on("click", (e) => {
+          if (state.mode === "hapus") {
+            L.DomEvent.stop(e);
+            hapusPenanda(item.id);
+          }
+        });
+
+        layer.addTo(lapisanPenanda);
+        layerById.set(item.id, layer);
+        return layer;
+      }
+
+      function gambarUlangSemua() {
+        lapisanPenanda.clearLayers();
+        layerById.clear();
+        state.penanda.forEach(tambahKePeta);
+        gambarUlangDaftar();
+      }
+
+      function hapusPenanda(id) {
+        const item = state.penanda.find((p) => p.id === id);
+        if (!item) return;
+        const posisi = state.penanda.indexOf(item);
+
+        const layer = layerById.get(id);
+        if (layer) {
+          map.closePopup();
+          lapisanPenanda.removeLayer(layer);
+          layerById.delete(id);
+        }
+        state.penanda.splice(posisi, 1);
+        simpan();
+        gambarUlangDaftar();
+
+        toast(`"${namaTampil(item)}" dihapus.`, {
+          batal: () => {
+            state.penanda.splice(posisi, 0, item);
+            simpan();
+            gambarUlangSemua();
+          },
+        });
+      }
+
+      function buatPenanda(jenis, koordinat) {
+        const item = {
+          id: idBaru(),
+          jenis,
+          koordinat,
+          ikon: state.ikon,
+          warna: state.warna,
+          nama: "",
+          catatan: "",
+          foto: "",
+        };
+        state.penanda.push(item);
+        const layer = tambahKePeta(item);
+        simpan();
+        gambarUlangDaftar();
+
+        // Langsung buka formulir supaya penanda bisa diberi nama saat itu juga.
+        // Koordinat wajib disuapi: garis & area berupa LayerGroup, dan Leaflet
+        // tidak bisa menyimpulkan titik popup dari sebuah grup.
+        layer.openPopup(titikPusat(item));
+        setTimeout(() => bukaForm(item), 10);
+      }
+
+      // =====================================================================
+      // Daftar penanda
+      // =====================================================================
+
+      const KOSONG = `
+    <div class="kosong">
+        <div class="kosong-ikon"><i class="fa-solid fa-location-dot"></i></div>
+        <p>Belum ada penanda.<br>Klik di peta untuk menandai lokasi pertama.</p>
+    </div>`;
+
+      function gambarUlangDaftar() {
+        const daftar = $("panelList");
+        $("panelCount").textContent = state.penanda.length;
+        daftar.innerHTML = "";
+
+        if (state.penanda.length === 0) {
+          daftar.innerHTML = KOSONG;
+          return;
+        }
+
+        state.penanda.forEach((item) => {
+          const ikon = cariIkon(item.ikon);
+          const warna = cariWarna(item.warna);
+          const terang = WARNA_TERANG.includes(item.warna) ? " is-terang" : "";
+
+          const baris = document.createElement("div");
+          baris.className = "item";
+          baris.innerHTML = `
+            <span class="item-dot${terang}" style="background:${warna.hex}"><i class="${ikon.fa}"></i></span>
+            <button class="item-teks" type="button" title="Tuju penanda ini di peta">
+                <span class="item-nama"></span>
+                <span class="item-jenis">
+                    ${item.foto ? '<i class="fa-solid fa-camera item-foto-tanda" title="Ada foto"></i>' : ""}
+                    ${NAMA_JENIS[item.jenis]} · ${ikon.label}
+                </span>
+            </button>
+            <button class="item-hapus" type="button" title="Hapus penanda"><i class="fa-solid fa-xmark"></i></button>
+        `;
+
+          // Tombol teks perlu gaya telanjang; diatur di sini agar CSS tetap ringkas
+          const tombolTeks = baris.querySelector(".item-teks");
+          tombolTeks.style.cssText = "border:none;background:none;padding:0;text-align:left;min-width:0;flex:1;cursor:pointer;";
+          baris.querySelector(".item-nama").textContent = namaTampil(item);
+
+          const layer = () => layerById.get(item.id);
+
+          tombolTeks.addEventListener("click", () => {
+            map.flyTo(titikPusat(item), Math.max(map.getZoom(), 17), { duration: 0.6 });
+            setTimeout(() => layer()?.openPopup(), 640);
+          });
+
+          // Menyorot di daftar juga menyorot pin di peta — menghubungkan
+          // kedua tampilan tanpa perlu dijelaskan
+          baris.addEventListener("mouseenter", () => {
+            const el = layer()?.getElement?.();
+            el?.classList.add("is-sorot");
+          });
+          baris.addEventListener("mouseleave", () => {
+            const el = layer()?.getElement?.();
+            el?.classList.remove("is-sorot");
+          });
+
+          baris.querySelector(".item-hapus").addEventListener("click", () => hapusPenanda(item.id));
+          daftar.appendChild(baris);
+        });
+      }
+
+      // =====================================================================
+      // Menggambar garis & area
+      // =====================================================================
+
+      const minimalTitik = () => (state.mode === "area" ? 3 : 2);
+
+      function perbaruiPratinjau() {
+        lapisanPratinjau.clearLayers();
+        const titik = state.titikSementara;
+
+        if (titik.length >= 2) {
+          const bentuk = state.mode === "area" && titik.length >= 3 ? buatArea(titik, state.warna) : buatGaris(titik, state.warna);
+          bentuk.addTo(lapisanPratinjau);
+        }
+
+        titik.forEach((t) =>
+          L.circleMarker(t, {
+            radius: 6,
+            color: "#ffffff",
+            weight: 3,
+            fillColor: cariWarna(state.warna).hex,
+            fillOpacity: 1,
+          }).addTo(lapisanPratinjau),
+        );
+
+        const kurang = minimalTitik() - titik.length;
+        $("drawbar").hidden = titik.length === 0;
+        $("drawbarCount").textContent = kurang > 0 ? `${titik.length} titik · butuh ${kurang} lagi` : `${titik.length} titik`;
+        $("btnFinish").disabled = kurang > 0;
+        $("btnUndoPoint").disabled = titik.length === 0;
+      }
+
+      function selesaiGambar() {
+        if (state.titikSementara.length < minimalTitik()) return;
+        buatPenanda(state.mode, state.titikSementara.slice());
+        batalGambar();
+      }
+
+      function batalGambar() {
+        state.titikSementara = [];
+        lapisanPratinjau.clearLayers();
+        $("drawbar").hidden = true;
+      }
+
+      // =====================================================================
+      // Mode & dok alat
+      // =====================================================================
+
+      const PETUNJUK = {
+        pilih: "Seret untuk menggeser peta. Klik penanda untuk melihat detailnya.",
+        pin: "Klik di peta untuk menaruh penanda.",
+        garis: "Klik beberapa titik untuk menggambar garis — jalan, sungai, atau rute. Tekan <b>Enter</b> jika sudah.",
+        area: "Klik beberapa titik untuk melingkupi area — sawah, batas RW, atau zona rawan. Tekan <b>Enter</b> jika sudah.",
+        hapus: "Klik penanda di peta untuk menghapusnya.",
+      };
+
+      function gantiMode(mode) {
+        if (state.mode !== mode) batalGambar();
+        state.mode = mode;
+
+        document.querySelectorAll(".dock-btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+
+        const menandai = ["pin", "garis", "area"].includes(mode);
+        $("map").classList.toggle("is-menandai", menandai);
+        $("map").classList.toggle("is-menghapus", mode === "hapus");
+        $("btnGaya").hidden = !menandai;
+        $("statusHint").innerHTML = PETUNJUK[mode];
+        perbaruiGaya();
+
+        // Zoom klik-ganda hanya mengganggu saat sedang menggambar
+        if (mode === "garis" || mode === "area") map.doubleClickZoom.disable();
+        else map.doubleClickZoom.enable();
+      }
+
+      // Tombol gaya memperlihatkan ikon & warna yang sedang dipakai, sehingga
+      // pilihan aktif terbaca tanpa perlu membuka paletnya
+      function perbaruiGaya() {
+        const menandai = ["pin", "garis", "area"].includes(state.mode);
+        const terbuka = menandai && state.gayaTerbuka;
+
+        $("styler").hidden = !terbuka;
+        $("btnGaya").setAttribute("aria-pressed", String(terbuka));
+
+        const contoh = $("gayaContoh");
+        contoh.style.background = cariWarna(state.warna).hex;
+        contoh.classList.toggle("is-terang", WARNA_TERANG.includes(state.warna));
+        contoh.innerHTML = `<i class="${cariIkon(state.ikon).fa}"></i>`;
+      }
+
+      // Ciutkan/lebarkan dok agar tidak menutupi peta saat tak dipakai
+      const dockEl = $("dock");
+      const btnMinimize = $("btnMinimize");
+
+      btnMinimize.addEventListener("click", () => {
+        const ciut = dockEl.classList.toggle("is-minim");
+        btnMinimize.setAttribute("aria-pressed", String(ciut));
+        btnMinimize.setAttribute("aria-expanded", String(!ciut));
+        btnMinimize.querySelector(".dock-tip").textContent = ciut ? "Lebarkan dok" : "Perkecil dok";
+
+        // Panel ikon & warna berada di luar dok, jadi harus ditutup manual
+        // saat dok diciutkan supaya tidak nyangkut kebuka sendiri
+        if (ciut && state.gayaTerbuka) {
+          state.gayaTerbuka = false;
+          perbaruiGaya();
+        }
+      });
+
+      document.querySelector(".dock").addEventListener("click", (e) => {
+        const btn = e.target.closest(".dock-btn");
+        if (!btn || btn.id === "btnMinimize") return;
+
+        if (btn.id === "btnGaya") {
+          state.gayaTerbuka = !state.gayaTerbuka;
+          perbaruiGaya();
+        } else {
+          gantiMode(btn.dataset.mode);
+        }
+      });
+
+      // --- Palet ikon ---
+      const paletIkon = $("iconPalette");
+      KATALOG_IKON.forEach((ikon) => {
+        const btn = document.createElement("button");
+        btn.className = "icon-btn";
+        btn.type = "button";
+        btn.dataset.ikon = ikon.id;
+        btn.title = ikon.label;
+        btn.setAttribute("aria-label", ikon.label);
+        btn.setAttribute("aria-pressed", String(ikon.id === state.ikon));
+        btn.innerHTML = `<i class="${ikon.fa}"></i>`;
+        paletIkon.appendChild(btn);
+      });
+
+      paletIkon.addEventListener("click", (e) => {
+        const btn = e.target.closest(".icon-btn");
+        if (!btn) return;
+        state.ikon = btn.dataset.ikon;
+        paletIkon.querySelectorAll(".icon-btn").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+        perbaruiGaya();
+        // Di ponsel palet menutupi peta, jadi ditutup begitu pilihan dibuat
+        if (ponsel()) {
+          state.gayaTerbuka = false;
+          perbaruiGaya();
+        }
+      });
+
+      // --- Palet warna ---
+      const paletWarna = $("colorPalette");
+      KATALOG_WARNA.forEach((warna) => {
+        const btn = document.createElement("button");
+        btn.className = "swatch";
+        btn.type = "button";
+        btn.dataset.warna = warna.id;
+        btn.title = warna.label;
+        btn.setAttribute("aria-label", warna.label);
+        btn.setAttribute("aria-pressed", String(warna.id === state.warna));
+        btn.style.background = warna.hex;
+        paletWarna.appendChild(btn);
+      });
+
+      paletWarna.addEventListener("click", (e) => {
+        const btn = e.target.closest(".swatch");
+        if (!btn) return;
+        state.warna = btn.dataset.warna;
+        paletWarna.querySelectorAll(".swatch").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+        if (state.titikSementara.length) perbaruiPratinjau();
+        perbaruiGaya();
+      });
+
+      // =====================================================================
+      // Interaksi peta
+      // =====================================================================
+
+      map.on("click", (e) => {
+        const { lat, lng } = e.latlng;
+        if (state.mode === "pin") {
+          buatPenanda("pin", [lat, lng]);
+        } else if (state.mode === "garis" || state.mode === "area") {
+          state.titikSementara.push([lat, lng]);
+          perbaruiPratinjau();
+        }
+      });
+
+      map.on("dblclick", (e) => {
+        if (state.mode === "garis" || state.mode === "area") {
+          L.DomEvent.stop(e);
+          selesaiGambar();
+        }
+      });
+
+      // Saat popup terbuka, petunjuk mode tidak lagi relevan dan hanya
+      // menghalangi — terutama di layar ponsel
+      map.on("popupopen", () => document.body.classList.add("popup-terbuka"));
+      map.on("popupclose", () => document.body.classList.remove("popup-terbuka"));
+
+      // Pembacaan koordinat langsung — pengganti alat survei di lapangan
+      map.on("mousemove", (e) => {
+        $("coordText").textContent = `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
+      });
+      map.on("mouseout", () => {
+        $("coordText").textContent = "—";
+      });
+
+      $("btnFinish").addEventListener("click", selesaiGambar);
+      $("btnCancel").addEventListener("click", batalGambar);
+      $("btnUndoPoint").addEventListener("click", () => {
+        state.titikSementara.pop();
+        perbaruiPratinjau();
+      });
+
+      // --- Pintasan papan tik ---
+      const PINTASAN = { 1: "pilih", 2: "pin", 3: "garis", 4: "area", 5: "hapus" };
+
+      document.addEventListener("keydown", (e) => {
+        // Jangan bajak tombol saat pengguna sedang mengetik
+        if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+        if (PINTASAN[e.key]) {
+          gantiMode(PINTASAN[e.key]);
+        } else if (e.key === "Enter" && state.titikSementara.length) {
+          selesaiGambar();
+        } else if (e.key === "Escape") {
+          if (state.titikSementara.length) batalGambar();
+          else map.closePopup();
+        }
+      });
+
+      // =====================================================================
+      // Simpan, muat, ekspor, impor
+      // =====================================================================
+
+      function simpan() {
+        try {
+          localStorage.setItem(KUNCI_SIMPAN, JSON.stringify(state.penanda));
+        } catch (err) {
+          console.warn("Gagal menyimpan penanda:", err);
+          // Foto memakan porsi terbesar, jadi kuota penuh perlu jalan keluar
+          // yang konkret — bukan sekadar kabar bahwa penyimpanan gagal.
+          const penuh = err.name === "QuotaExceededError" || /quota/i.test(err.message || "");
+          toast(penuh ? "Penyimpanan penuh. Ekspor penanda, lalu buang beberapa foto." : "Penanda gagal disimpan di peramban ini.", { gagal: true });
+        }
+      }
+
+      function muat() {
+        try {
+          const data = localStorage.getItem(KUNCI_SIMPAN);
+          if (!data) return null;
+          const hasil = JSON.parse(data);
+          return Array.isArray(hasil) ? hasil : null;
+        } catch (err) {
+          console.warn("Gagal memuat penanda:", err);
+          return null;
+        }
+      }
+
+      // GeoJSON memakai urutan [lng, lat] — kebalikan dari Leaflet [lat, lng]
+      function keGeoJSON() {
+        return {
+          type: "FeatureCollection",
+          features: state.penanda.map((item) => {
+            let geometry;
+            if (item.jenis === "pin") {
+              geometry = { type: "Point", coordinates: [item.koordinat[1], item.koordinat[0]] };
+            } else if (item.jenis === "garis") {
+              geometry = { type: "LineString", coordinates: item.koordinat.map((k) => [k[1], k[0]]) };
+            } else {
+              const cincin = item.koordinat.map((k) => [k[1], k[0]]);
+              cincin.push(cincin[0]); // cincin poligon GeoJSON harus tertutup
+              geometry = { type: "Polygon", coordinates: [cincin] };
+            }
+            return {
+              type: "Feature",
+              geometry,
+              properties: {
+                nama: item.nama,
+                catatan: item.catatan,
+                ikon: item.ikon,
+                warna: item.warna,
+                foto: item.foto || "",
+              },
+            };
+          }),
+        };
+      }
+
+      function dariGeoJSON(geo) {
+        const hasil = [];
+        (geo.features || []).forEach((f) => {
+          const g = f.geometry;
+          const p = f.properties || {};
+          if (!g) return;
+
+          let jenis, koordinat;
+          if (g.type === "Point") {
+            jenis = "pin";
+            koordinat = [g.coordinates[1], g.coordinates[0]];
+          } else if (g.type === "LineString") {
+            jenis = "garis";
+            koordinat = g.coordinates.map((c) => [c[1], c[0]]);
+          } else if (g.type === "Polygon") {
+            jenis = "area";
+            koordinat = g.coordinates[0].slice(0, -1).map((c) => [c[1], c[0]]);
+          } else {
+            return;
+          }
+
+          hasil.push({
+            id: idBaru(),
+            jenis,
+            koordinat,
+            ikon: cariIkon(p.ikon).id,
+            warna: cariWarna(p.warna).id,
+            nama: p.nama || p.name || "",
+            catatan: p.catatan || p.description || "",
+            // Terima foto hanya bila berupa data URL gambar, bukan tautan luar
+            foto: /^data:image\//.test(p.foto || "") ? p.foto : "",
+          });
+        });
+        return hasil;
+      }
+
+      $("btnExport").addEventListener("click", () => {
+        if (state.penanda.length === 0) {
+          toast("Belum ada penanda untuk diekspor.", { gagal: true });
+          return;
+        }
+        const blob = new Blob([JSON.stringify(keGeoJSON(), null, 2)], { type: "application/geo+json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "penanda-cipurwasari.geojson";
+        a.click();
+        URL.revokeObjectURL(url);
+        toast(`${state.penanda.length} penanda diekspor.`);
+      });
+
+      $("btnImport").addEventListener("click", () => $("fileInput").click());
+
+      $("fileInput").addEventListener("change", async () => {
+        const file = $("fileInput").files[0];
+        if (!file) return;
+        try {
+          const masuk = dariGeoJSON(JSON.parse(await file.text()));
+          if (masuk.length === 0) {
+            toast("Tidak ada penanda yang terbaca dari file itu.", { gagal: true });
+          } else {
+            state.penanda.push(...masuk);
+            simpan();
+            gambarUlangSemua();
+            map.fitBounds(
+              L.featureGroup([...layerById.values()])
+                .getBounds()
+                .pad(0.15),
+            );
+            toast(`${masuk.length} penanda diimpor.`);
+          }
+        } catch (err) {
+          console.warn(err);
+          toast("File tidak terbaca. Pastikan formatnya GeoJSON.", { gagal: true });
+        }
+        $("fileInput").value = "";
+      });
+
+      $("btnClear").addEventListener("click", () => {
+        if (state.penanda.length === 0) return;
+        if (!confirm(`Hapus semua ${state.penanda.length} penanda? Ekspor dulu jika masih dibutuhkan.`)) return;
+
+        const cadangan = state.penanda.slice();
+        state.penanda = [];
+        simpan();
+        gambarUlangSemua();
+        toast("Semua penanda dihapus.", {
+          batal: () => {
+            state.penanda = cadangan;
+            simpan();
+            gambarUlangSemua();
+          },
+        });
+      });
+
+      // =====================================================================
+      // Poster Peta Potensi Desa
+      // Foto-foto ditata mengelilingi peta lalu ditarik garis ke titiknya —
+      // meniru peta potensi desa yang biasa dicetak dan dipajang di balai desa.
+      // Petanya tetap peta Leaflet sungguhan (bukan tangkapan layar), jadi
+      // bingkainya bisa diatur dulu sebelum dicetak.
+      // =====================================================================
+
+      const MAKS_KARTU = 10; // 5 kartu per kolom — lebih dari itu kolomnya jebol
+
+      const poster = {
+        peta: null,
+        inset: null,
+        kotakInset: null,
+        kartu: [], // { item, nomor, el }
+        lapisan: null,
+      };
+
+      function judulPoster() {
+        return {
+          judul: localStorage.getItem("poster-judul") || "PETA POTENSI DESA CIPURWASARI",
+          sub: localStorage.getItem("poster-sub") || "Kecamatan Tegalwaru, Kabupaten Karawang, Jawa Barat",
+          tim: localStorage.getItem("poster-tim") || "KKN Desa Cipurwasari",
+        };
+      }
+
+      function bukaPoster() {
+        if (state.penanda.length === 0) {
+          toast("Belum ada penanda. Tandai lokasi dulu, baru posternya bisa dibuat.", { gagal: true });
+          return;
+        }
+
+        const t = judulPoster();
+
+        // Kolom hanya muat 5 kartu per sisi. Kelebihannya dipangkas, tapi
+        // pengguna diberi tahu — poster yang diam-diam membuang foto lebih
+        // berbahaya daripada poster yang mengaku memuat sebagian.
+        const semuaBerfoto = state.penanda.filter((p) => p.foto);
+        const berfoto = semuaBerfoto.slice(0, MAKS_KARTU);
+        if (semuaBerfoto.length > MAKS_KARTU) {
+          toast(`Poster memuat ${MAKS_KARTU} foto pertama dari ${semuaBerfoto.length}.`);
+        }
+
+        const el = document.createElement("div");
+        el.className = "poster-layar";
+        el.innerHTML = `
+        <div class="poster-bar">
+            <button class="btn btn--ghost" id="pTutup"><i class="fa-solid fa-arrow-left"></i> Kembali ke peta</button>
+            <p class="poster-petunjuk">Geser & zoom petanya untuk mengatur bingkai. Klik judul untuk menggantinya.</p>
+            <button class="btn btn--ok" id="pCetak"><i class="fa-solid fa-print"></i> Cetak / simpan PDF</button>
+        </div>
+
+        <div class="poster-gulung">
+          <div class="poster" id="poster">
+            <div class="poster-kiri" id="pKiri"></div>
+
+            <div class="poster-tengah">
+                <div class="poster-peta" id="pPeta"></div>
+                <svg class="poster-utara" viewBox="0 0 40 56" aria-label="Arah utara">
+                    <polygon points="20,4 29,35 20,28 11,35" fill="#22301f"/>
+                    <polygon points="20,4 20,28 11,35" fill="#7d8a80"/>
+                    <text x="20" y="52" text-anchor="middle" font-size="16" font-weight="700"
+                          fill="#22301f" font-family="sans-serif">U</text>
+                </svg>
+            </div>
+
+            <div class="poster-kanan" id="pKanan"></div>
+
+            <aside class="poster-blok">
+                <h2 class="poster-judul" id="pJudul" contenteditable="true" spellcheck="false"></h2>
+                <p class="poster-sub" id="pSub" contenteditable="true" spellcheck="false"></p>
+                <div class="poster-garis-hias"></div>
+
+                <div class="poster-inset">
+                    <div id="pInset"></div>
+                    <p class="poster-inset-ket">Peta inset — kotak merah menunjukkan cakupan peta utama</p>
+                </div>
+
+                <div class="poster-legenda">
+                    <h3>Keterangan</h3>
+                    <div id="pLegenda"></div>
+                </div>
+                <div class="poster-kaki">
+                    <p class="poster-sumber">Sumber peta: Citra satelit Esri World Imagery</p>
+                    <p class="poster-tim" id="pTim" contenteditable="true" spellcheck="false"></p>
+                </div>
+            </aside>
+
+            <svg class="poster-tali" id="pTali"></svg>
+          </div>
+        </div>
+    `;
+        document.body.appendChild(el);
+        document.body.classList.add("mode-poster");
+
+        $("pJudul").textContent = t.judul;
+        $("pSub").textContent = t.sub;
+        $("pTim").textContent = t.tim;
+
+        // Judul yang disunting ikut tersimpan, supaya tidak perlu diketik ulang
+        const simpanTeks = (id, kunci) => $(id).addEventListener("blur", () => localStorage.setItem(kunci, $(id).textContent.trim()));
+        simpanTeks("pJudul", "poster-judul");
+        simpanTeks("pSub", "poster-sub");
+        simpanTeks("pTim", "poster-tim");
+
+        // --- Peta poster: salinan hidup, bukan tangkapan layar ---
+        poster.peta = L.map("pPeta", {
+          center: map.getCenter(),
+          zoom: map.getZoom(),
+          zoomControl: false,
+          attributionControl: false,
+        });
+        L.tileLayer(URL_SATELIT, { maxZoom: 19 }).addTo(poster.peta);
+
+        // Skala batang: peta cetak tanpa skala tidak bisa dipakai mengukur apa pun
+        L.control.scale({ metric: true, imperial: false, position: "bottomleft", maxWidth: 160 }).addTo(poster.peta);
+
+        poster.lapisan = L.layerGroup().addTo(poster.peta);
+        poster.kartu = [];
+
+        // --- Kartu foto: kiri & kanan mengikuti letak aslinya di peta ---
+        const pusat = poster.peta.getCenter();
+        const kiri = [],
+          kanan = [];
+        berfoto.forEach((item) => {
+          (titikPusat(item)[1] < pusat.lng ? kiri : kanan).push({ item });
+        });
+
+        // Yang paling utara ditaruh paling atas, supaya talinya tidak menyilang
+        const urut = (a) => a.sort((x, y) => titikPusat(y.item)[0] - titikPusat(x.item)[0]);
+        urut(kiri);
+        urut(kanan);
+        seimbangkan(kiri, kanan);
+
+        // Nomor diberikan setelah tata letaknya pasti: menurun di kolom kiri,
+        // lalu lanjut menurun di kolom kanan. Pembaca bisa menyusurinya urut.
+        const nomorPer = new Map();
+        [...kiri, ...kanan].forEach((k, i) => {
+          k.nomor = i + 1;
+          nomorPer.set(k.item.id, i + 1);
+        });
+
+        kiri.forEach((k) => $("pKiri").appendChild(kartuPoster(k)));
+        kanan.forEach((k) => $("pKanan").appendChild(kartuPoster(k)));
+        poster.kartu = [...kiri, ...kanan];
+
+        // Penanda digambar setelah nomornya diketahui; nomor itulah yang
+        // menautkan kartu foto dengan titiknya di peta
+        state.penanda.forEach((item) => {
+          if (item.jenis === "pin") {
+            L.marker(item.koordinat, {
+              icon: ikonPoster(item, nomorPer.get(item.id) || null),
+              interactive: false,
+            }).addTo(poster.lapisan);
+          } else if (item.jenis === "garis") {
+            buatGaris(item.koordinat, item.warna).addTo(poster.lapisan);
+          } else {
+            buatArea(item.koordinat, item.warna).addTo(poster.lapisan);
+          }
+        });
+
+        gambarLegendaPoster();
+
+        if (berfoto.length === 0) {
+          $("pKiri").innerHTML = `<p class="poster-kosong">
+            Belum ada penanda berfoto. Tambahkan foto lewat tombol <b>Ubah</b> di penanda,
+            dan fotonya akan muncul mengelilingi peta di sini.</p>`;
+        }
+
+        // Bingkai peta dipaskan ke penanda, bukan mewarisi zoom peta utama.
+        // Kalau tidak, penanda menggerombol jadi satu gumpalan di tengah.
+        const semuaTitik = state.penanda.flatMap((p) => (p.jenis === "pin" ? [p.koordinat] : p.koordinat));
+        if (semuaTitik.length === 1) {
+          poster.peta.setView(semuaTitik[0], 17);
+        } else {
+          poster.peta.fitBounds(L.latLngBounds(semuaTitik), { padding: [64, 64], maxZoom: 18 });
+        }
+
+        // --- Peta inset: menunjukkan cakupan peta utama dalam konteks luas ---
+        poster.inset = L.map("pInset", {
+          zoomControl: false,
+          attributionControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          boxZoom: false,
+          keyboard: false,
+          touchZoom: false,
+        });
+        L.tileLayer(URL_SATELIT, { maxZoom: 19 }).addTo(poster.inset);
+        poster.kotakInset = L.rectangle(poster.peta.getBounds(), {
+          color: "#e11d48",
+          weight: 2.5,
+          fill: false,
+        }).addTo(poster.inset);
+
+        const perbaruiInset = () => {
+          poster.kotakInset.setBounds(poster.peta.getBounds());
+          poster.inset.setView(poster.peta.getCenter(), Math.max(poster.peta.getZoom() - 4, 7));
+        };
+        perbaruiInset();
+
+        poster.peta.on("move zoom", gambarTali);
+        poster.peta.on("moveend zoomend", () => {
+          gambarTali();
+          perbaruiInset();
+        });
+        window.addEventListener("resize", gambarTali);
+        setTimeout(gambarTali, 400);
+
+        $("pTutup").addEventListener("click", tutupPoster);
+        $("pCetak").addEventListener("click", () => window.print());
+        document.addEventListener("keydown", posterKeydown);
+      }
+
+      // Kolom dijaga seimbang: satu sisi menumpuk penuh sementara sisi lain
+      // kosong akan membuat talinya menyilang jauh
+      function seimbangkan(kiri, kanan) {
+        while (kiri.length - kanan.length > 1) kanan.unshift(kiri.pop());
+        while (kanan.length - kiri.length > 1) kiri.push(kanan.shift());
+      }
+
+      function ikonPoster(item, nomor) {
+        const ikon = cariIkon(item.ikon);
+        const warna = cariWarna(item.warna);
+        const terang = WARNA_TERANG.includes(item.warna) ? " is-terang" : "";
+        const label = nomor ? `<span class="pp-nomor">${nomor}</span>` : "";
+
+        return L.divIcon({
+          className: "penanda pp-penanda",
+          html: `<div class="penanda-badge${terang}" style="--warna:${warna.hex}">
+                   <i class="${ikon.fa}"></i>${label}
+               </div>
+               <div class="penanda-ekor"></div>`,
+          iconSize: [32, 42],
+          iconAnchor: [16, 40],
+        });
+      }
+
+      function kartuPoster(kartu) {
+        const { item, nomor } = kartu;
+        const el = document.createElement("figure");
+        el.className = "pp-kartu";
+        el.innerHTML = `
+        <span class="pp-kartu-nomor">${nomor}</span>
+        <img alt="">
+        <figcaption></figcaption>
+    `;
+        el.querySelector("img").src = item.foto;
+        el.querySelector("img").alt = namaTampil(item);
+        el.querySelector("figcaption").textContent = namaTampil(item);
+        kartu.el = el;
+        return el;
+      }
+
+      function gambarLegendaPoster() {
+        const wadah = $("pLegenda");
+        wadah.innerHTML = "";
+
+        // Legenda dikelompokkan per jenis ikon yang benar-benar dipakai —
+        // bukan daftar semua ikon yang tersedia
+        const dipakai = new Map();
+        state.penanda.forEach((p) => {
+          const kunci = p.ikon + "|" + p.warna;
+          if (!dipakai.has(kunci)) dipakai.set(kunci, { ikon: p.ikon, warna: p.warna, jumlah: 0 });
+          dipakai.get(kunci).jumlah++;
+        });
+
+        dipakai.forEach((g) => {
+          const ikon = cariIkon(g.ikon);
+          const warna = cariWarna(g.warna);
+          const terang = WARNA_TERANG.includes(g.warna) ? " is-terang" : "";
+          const baris = document.createElement("div");
+          baris.className = "pp-legenda-baris";
+          baris.innerHTML = `
+            <span class="pp-legenda-dot${terang}" style="background:${warna.hex}"><i class="${ikon.fa}"></i></span>
+            <span class="pp-legenda-teks">${ikon.label}</span>
+            <span class="pp-legenda-jumlah">${g.jumlah}</span>
+        `;
+          wadah.appendChild(baris);
+        });
+      }
+
+      // Tali penghubung: dari tepi dalam kartu ke titiknya di peta
+      function gambarTali() {
+        const svg = $("pTali");
+        if (!svg || !poster.peta) return;
+
+        const bingkai = $("poster").getBoundingClientRect();
+        svg.setAttribute("viewBox", `0 0 ${bingkai.width} ${bingkai.height}`);
+        svg.innerHTML = "";
+
+        const kotakPeta = $("pPeta").getBoundingClientRect();
+        const jalur = [];
+
+        poster.kartu.forEach((kartu) => {
+          if (!kartu.el) return;
+          const kk = kartu.el.getBoundingClientRect();
+          const kiri = kk.left < bingkai.left + bingkai.width / 2;
+
+          const x1 = (kiri ? kk.right : kk.left) - bingkai.left;
+          const y1 = kk.top + kk.height / 2 - bingkai.top;
+
+          const p = poster.peta.latLngToContainerPoint(titikPusat(kartu.item));
+          const x2 = kotakPeta.left - bingkai.left + p.x;
+          const y2 = kotakPeta.top - bingkai.top + p.y;
+
+          // Titik di luar bingkai peta tidak digambar talinya — garis yang
+          // menunjuk ke luar peta hanya membingungkan
+          if (p.x < 0 || p.y < 0 || p.x > kotakPeta.width || p.y > kotakPeta.height) return;
+
+          // Siku, bukan garis miring: mengikuti gaya peta potensi cetak
+          const xTekuk = kiri ? x1 + (x2 - x1) * 0.45 : x1 - (x1 - x2) * 0.45;
+          jalur.push({ d: `M ${x1} ${y1} L ${xTekuk} ${y1} L ${xTekuk} ${y2} L ${x2} ${y2}`, x2, y2 });
+        });
+
+        // Dua babak, bukan per tali. Kalau tiap tali digambar putih-lalu-gelap
+        // secara berurutan, lapisan putih tali berikutnya menghapus garis gelap
+        // tali sebelumnya di ruas yang berimpit.
+        const bagian = [jalur.map((j) => `<path d="${j.d}" class="pp-tali-bawah" />`), jalur.map((j) => `<path d="${j.d}" class="pp-tali" />`), jalur.map((j) => `<circle cx="${j.x2}" cy="${j.y2}" r="3" class="pp-tali-titik" />`)];
+        svg.insertAdjacentHTML("beforeend", bagian.flat().join(""));
+      }
+
+      function posterKeydown(e) {
+        if (e.key === "Escape" && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName) && !document.activeElement?.isContentEditable) {
+          tutupPoster();
+        }
+      }
+
+      function tutupPoster() {
+        poster.peta?.remove();
+        poster.inset?.remove();
+        poster.peta = null;
+        poster.inset = null;
+        poster.kartu = [];
+        document.querySelector(".poster-layar")?.remove();
+        document.body.classList.remove("mode-poster");
+        window.removeEventListener("resize", gambarTali);
+        document.removeEventListener("keydown", posterKeydown);
+        map.invalidateSize();
+      }
+
+      $("btnPoster").addEventListener("click", bukaPoster);
+
+      // =====================================================================
+      // Data awal
+      // =====================================================================
+
+      const PENANDA_BAWAAN = [
+        {
+          id: idBaru(),
+          jenis: "pin",
+          koordinat: kordinatCipurwasari,
+          ikon: "trash",
+          warna: "merah",
+          nama: "Tempat Sampah Cipurwasari",
+          catatan: "Tempat pembuangan sampah terpilah hasil program kerja KKN, untuk mengurangi kebiasaan warga membuang sampah di aliran sungai. Dikelola bersama warga RT/RW setempat.",
+        },
+      ];
+
+      state.penanda = muat() || PENANDA_BAWAAN;
+      gambarUlangSemua();
+      gantiMode("pin"); // Buka halaman, langsung bisa klik & tandai
+      perbaruiPratinjau();
+
+      const toggle = document.getElementById("navToggle");
+      const list = document.getElementById("navList");
+      toggle.addEventListener("click", () => list.classList.toggle("open"));
+      list.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => list.classList.remove("open")));
+
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) e.target.classList.add("in");
+          });
+        },
+        { threshold: 0.15 },
+      );
+      document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+    </script>
+  </body>
+</html>

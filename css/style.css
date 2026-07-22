@@ -1,0 +1,17 @@
+.hero{height:80vh;background:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),url("https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1600&auto=format&fit=crop") center/cover;}
+.card{transition:.3s}
+.card:hover{transform:translateY(-8px);box-shadow:0 10px 20px rgba(0,0,0,.2)}
+
+.btn-custom {
+    background-color: #198754;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.btn-custom:hover {
+    background-color: #1b5e20;
+    color: white;
+}
