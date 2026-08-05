@@ -1,1 +1,5 @@
+User-agent: *
 
+Allow: /
+
+Sitemap: https://cipurwasaribersih.web.id/sitemap.xml
